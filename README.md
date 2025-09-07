@@ -12,7 +12,7 @@ This project is a web-based application that renders the Mandelbrot set with an 
 
 ## Project Checkpoints
 
-- [ ] **Checkpoint 1: Core Mandelbrot Logic in C++.**
+- [X] **Checkpoint 1: Core Mandelbrot Logic in C++.**
 - [ ] **Checkpoint 2: Compiling C++ to WebAssembly.**
 - [ ] **Checkpoint 3: Rendering the Set on a Web Page.**
 - [ ] **Checkpoint 4: Implementing Interactive Zoom.**
