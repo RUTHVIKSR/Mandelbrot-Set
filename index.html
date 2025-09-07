@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>C++ Mandelbrot Viewer</title>
+    <style>
+        body { background-color: #333; color: #fff; text-align: center; }
+        canvas { border: 1px solid #fff; }
+    </style>
+</head>
+<body>
+    <h1>Mandelbrot Set generated with C++ and WebAssembly</h1>
+    <canvas id="mandelbrotCanvas" width="800" height="600"></canvas>
+
+    <script async src="mandelbrot.js"></script>
+
+    <script>
+        const canvas = document.getElementById('mandelbrotCanvas');
+        const ctx = canvas.getContext('2d');
+        const width = canvas.width;
+        const height = canvas.height;
+
+        // The Emscripten module is loaded asynchronously. We must wait until it's
+        // initialized before we can call our C++ functions.
+        var Module = {
+            onRuntimeInitialized: function() {
+                console.log("WebAssembly module loaded.");
+                drawMandelbrot();
+            }
+        };
+
+        function drawMandelbrot() {
+            console.log("Calling C++ generateMandelbrot function...");
+            
+            // --- Parameters for the initial view ---
+            const max_iterations = 1000;
+            const x_min = -2.0;
+            const x_max = 1.0;
+            const y_min = -1.0;
+            const y_max = 1.0;
+
+            // 1. Call our exported C++ function. It returns a memory address (pointer)
+            //    to the start of our image data buffer in the Wasm memory.
+            const pointer = Module._generateMandelbrot(width, height, max_iterations, x_min, x_max, y_min, y_max);
+
+            // 2. Create a JavaScript view into the Wasm memory.
+            //    We create an array of 8-bit unsigned integers (the format the canvas needs)
+            //    starting at the 'pointer' address, with a length of width * height * 4.
+            const imageDataArray = new Uint8ClampedArray(Module.HEAPU8.buffer, pointer, width * height * 4);
+
+            // 3. Create an ImageData object from our array.
+            const imageData = new ImageData(imageDataArray, width, height);
+
+            // 4. Draw the ImageData onto the canvas.
+            ctx.putImageData(imageData, 0, 0);
+
+            // 5. IMPORTANT: Free the memory that we allocated in C++ to avoid memory leaks.
+            Module._free(pointer);
+            console.log("Drawing complete and memory freed.");
+        }
+    </script>
+</body>
+</html>
