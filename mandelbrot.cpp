@@ -7,11 +7,11 @@ extern "C" {
 // EMSCRIPTEN_KEEPALIVE ensures the function isn't removed by the compiler
 // if it seems unused from a C++ perspective.
 __attribute__((used))
-int* generateMandelbrot(int width, int height, int max_iterations, double x_min, double x_max, double y_min, double y_max) {
+unsigned char* generateMandelbrot(int width, int height, int max_iterations, double x_min, double x_max, double y_min, double y_max) {
     // We need to allocate memory that lives on after this function returns.
     // The JavaScript caller will be responsible for freeing this memory.
-    // The buffer will store R, G, B, A values for each pixel.
-    int* buffer = new int[width * height * 4];
+    // The buffer will store R, G, B, A values for each pixel as bytes.
+    unsigned char* buffer = new unsigned char[width * height * 4];
 
     for (int y = 0; y < height; ++y) {
         for (int x = 0; x < width; ++x) {
@@ -29,12 +29,12 @@ int* generateMandelbrot(int width, int height, int max_iterations, double x_min,
             }
 
             // --- Color the Pixel ---
-            int r = 0, g = 0, b = 0;
+            unsigned char r = 0, g = 0, b = 0;
             if (iterations < max_iterations) {
                 // Point is outside the set, give it a color
-                r = (iterations % 256);
-                g = (iterations * 2 % 256);
-                b = (iterations * 5 % 256);
+                r = (unsigned char)(iterations % 256);
+                g = (unsigned char)((iterations * 2) % 256);
+                b = (unsigned char)((iterations * 5) % 256);
             }
             
             // --- Store RGBA values in the buffer ---

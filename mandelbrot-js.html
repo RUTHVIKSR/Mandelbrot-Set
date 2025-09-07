@@ -2,33 +2,32 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>C++ Mandelbrot Viewer</title>
+    <title>JavaScript Mandelbrot Viewer</title>
     <style>
-        body { background-color: #333; color: #fff; text-align: center; }
+        body { background-color: #333; color: #fff; text-align: center; font-family: Arial, sans-serif; }
         canvas { border: 1px solid #fff; cursor: crosshair; }
+        .controls { margin: 20px; }
         .info { margin: 10px; font-size: 14px; color: #ccc; }
-        .debug { color: yellow; font-family: monospace; font-size: 12px; text-align: left; margin: 20px; }
     </style>
 </head>
 <body>
-    <h1>Mandelbrot Set generated with C++ and WebAssembly</h1>
+    <h1>Mandelbrot Set Visualization</h1>
     <div class="info">Click on the fractal to zoom in! Press 'R' to reset.</div>
     <canvas id="mandelbrotCanvas" width="800" height="600"></canvas>
-    <div id="debug" class="debug"></div>
+    <div class="controls">
+        <button onclick="resetView()">Reset View</button>
+        <button onclick="increaseIterations()">More Detail</button>
+        <button onclick="decreaseIterations()">Less Detail</button>
+        <span id="info">Iterations: 100</span>
+    </div>
     
     <script>
         const canvas = document.getElementById('mandelbrotCanvas');
         const ctx = canvas.getContext('2d');
         const width = canvas.width;
         const height = canvas.height;
-        const debug = document.getElementById('debug');
         
-        function log(message) {
-            console.log(message);
-            debug.innerHTML += message + '<br>';
-        }
-        
-        // --- State variables for the current view ---
+        // State variables for the current view
         let current_x_min = -2.5;
         let current_x_max = 1.0;
         let current_y_min = -1.25;
@@ -37,9 +36,6 @@
         
         const zoomFactor = 2.0;
         
-        log("Starting Mandelbrot visualization...");
-        
-        // Use JavaScript implementation for now (faster to get working)
         function mandelbrotIteration(cx, cy, maxIter) {
             let x = 0, y = 0;
             let iterations = 0;
@@ -69,7 +65,7 @@
         }
         
         function drawMandelbrot() {
-            log(`Drawing fractal: x:[${current_x_min.toFixed(6)}, ${current_x_max.toFixed(6)}], y:[${current_y_min.toFixed(6)}, ${current_y_max.toFixed(6)}], iterations: ${max_iterations}`);
+            console.log(`Drawing fractal: x:[${current_x_min.toFixed(6)}, ${current_x_max.toFixed(6)}], y:[${current_y_min.toFixed(6)}, ${current_y_max.toFixed(6)}], iterations: ${max_iterations}`);
             
             const imageData = ctx.createImageData(width, height);
             const data = imageData.data;
@@ -77,17 +73,7 @@
             const x_range = current_x_max - current_x_min;
             const y_range = current_y_max - current_y_min;
             
-            // Draw line by line for better performance feedback
-            let rowsProcessed = 0;
-            
-            function processRow() {
-                if (rowsProcessed >= height) {
-                    ctx.putImageData(imageData, 0, 0);
-                    log("Drawing complete!");
-                    return;
-                }
-                
-                const py = rowsProcessed;
+            for (let py = 0; py < height; py++) {
                 for (let px = 0; px < width; px++) {
                     // Map pixel coordinates to complex plane
                     const cx = current_x_min + (px / width) * x_range;
@@ -106,23 +92,31 @@
                     data[index + 2] = b; // Blue
                     data[index + 3] = 255; // Alpha
                 }
-                
-                rowsProcessed++;
-                
-                // Update every 50 rows for visual feedback
-                if (rowsProcessed % 50 === 0) {
-                    ctx.putImageData(imageData, 0, 0);
-                    log(`Processed ${rowsProcessed}/${height} rows...`);
-                    setTimeout(processRow, 1); // Allow UI to update
-                } else {
-                    processRow(); // Continue immediately
-                }
             }
             
-            processRow();
+            ctx.putImageData(imageData, 0, 0);
+            document.getElementById('info').textContent = `Iterations: ${max_iterations}`;
         }
         
-        // --- Zooming Logic ---
+        function resetView() {
+            current_x_min = -2.5;
+            current_x_max = 1.0;
+            current_y_min = -1.25;
+            current_y_max = 1.25;
+            drawMandelbrot();
+        }
+        
+        function increaseIterations() {
+            max_iterations = Math.min(max_iterations + 50, 1000);
+            drawMandelbrot();
+        }
+        
+        function decreaseIterations() {
+            max_iterations = Math.max(max_iterations - 50, 50);
+            drawMandelbrot();
+        }
+        
+        // Zoom functionality
         canvas.addEventListener('click', (event) => {
             const rect = canvas.getBoundingClientRect();
             const mouseX = event.clientX - rect.left;
@@ -144,9 +138,6 @@
             current_y_min = clicked_imag - new_y_range / 2;
             current_y_max = clicked_imag + new_y_range / 2;
             
-            // Increase iterations for deeper zooms
-            max_iterations = Math.min(max_iterations + 25, 500);
-            
             drawMandelbrot();
         });
         
@@ -154,12 +145,14 @@
         document.addEventListener('keydown', (event) => {
             switch(event.key.toLowerCase()) {
                 case 'r':
-                    current_x_min = -2.5;
-                    current_x_max = 1.0;
-                    current_y_min = -1.25;
-                    current_y_max = 1.25;
-                    max_iterations = 100;
-                    drawMandelbrot();
+                    resetView();
+                    break;
+                case '+':
+                case '=':
+                    increaseIterations();
+                    break;
+                case '-':
+                    decreaseIterations();
                     break;
             }
         });

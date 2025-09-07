@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Test WebAssembly</title>
+</head>
+<body>
+    <h1>Testing WebAssembly Module</h1>
+    <div id="output"></div>
+    
+    <script src="mandelbrot.js"></script>
+    <script>
+        const output = document.getElementById('output');
+        
+        function log(message) {
+            console.log(message);
+            output.innerHTML += message + '<br>';
+        }
+        
+        log("Starting WebAssembly test...");
+        
+        // Test if Module function exists
+        if (typeof Module === 'function') {
+            log("Module function found, loading...");
+            
+            Module().then(function(module) {
+                log("WebAssembly module loaded successfully!");
+                log("Available exports: " + Object.keys(module).filter(key => key.startsWith('_')).join(', '));
+                
+                if (module._generateMandelbrot) {
+                    log("generateMandelbrot function found!");
+                    
+                    // Test basic function call
+                    try {
+                        const pointer = module._generateMandelbrot(10, 10, 100, -2.0, 1.0, -1.0, 1.0);
+                        log("Function call successful, pointer: " + pointer);
+                        
+                        if (pointer) {
+                            module._free(pointer);
+                            log("Memory freed successfully");
+                        }
+                    } catch (error) {
+                        log("Error calling function: " + error.message);
+                    }
+                } else {
+                    log("generateMandelbrot function NOT found!");
+                }
+            }).catch(function(error) {
+                log("Failed to load WebAssembly module: " + error.message);
+            });
+        } else {
+            log("Module function not found! Type: " + typeof Module);
+        }
+    </script>
+</body>
+</html>
